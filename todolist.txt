@@ -1,0 +1,53 @@
+Subtitle Editor - TODO（最新）
+作成日: 2025-10-21
+
+完了済み:
+1) Scaffold project
+   - ローカルで動く Node.js + Vite + React のワークスペースを作成
+
+2) Video player UI
+   - MP4 の読み込み、再生／一時停止、5秒巻き戻し／5秒早送り、シークバー（ミリ秒精度対応）
+
+3) SRT import & parser
+   - `src/utils/srt.ts` にパーサ（`parseSrt`, `stringifySrt`）を実装
+
+4) Subtitle list UI
+   - `src/components/SubtitlesList.tsx` に読み込み、表示、テキスト編集、開始/終了時刻編集を実装
+   - 字幕の削除、SRT エクスポート、各行からの再生・一時停止ボタンを実装
+
+5) Sync playback with subtitles
+   - 再生中の字幕をハイライトして自動スクロール（開始時刻設定時はスクロールを遅延させる処理で入力がずれないよう調整）
+
+6) Save edited SRT
+   - 編集済み字幕を `.srt` としてダウンロード可能（`stringifySrt` によりミリ秒出力）
+
+7) Quick-set start/end from video
+   - 開始/終了入力横にアイコンボタンを追加し、動画の現在時刻（ミリ秒単位）を設定可能
+   - 開始を設定した場合は直前の字幕の終了時刻を同一時刻に自動調整
+
+8) Delete subtitle
+   - 各字幕行に削除（ゴミ箱）ボタンを追加。削除は即時で親 state に反映。
+
+未完（優先タスク）:
+- Quality gates & docs
+  - SRT パーサのユニットテスト追加（Vitest 等）
+  - README の詳細化（使い方、注意点、例）
+
+今後の提案:
+- 取り消し（undo）機能を追加（削除の誤操作対策）
+- parse/stringify の単体テストを追加して品質を担保
+- UI 微調整（SVG アイコン化、ボタンのタップ領域、色調整）
+
+ローカルでの実行方法:
+```bash
+cd /Users/chiemi/works/2025/subtitleEditor
+npm install
+npm run dev
+```
+
+次にやること（私からの提案、1つ選んでください）:
+1) undo（削除の取り消し）機能を追加
+2) テスト（SRT パーサ）を追加
+3) README を詳しくする
+4) UI 微調整（アイコン SVG 化など）
+

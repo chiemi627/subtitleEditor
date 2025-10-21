@@ -1,0 +1,31 @@
+.app { height: 100vh; box-sizing: border-box }
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; padding: 16px; }
+header { margin-bottom: 12px }
+.layout { display: flex; gap: 12px; height: calc(100vh - 80px); /* leave room for header */ }
+.video-area { width: 680px; max-width: 45%; flex: 0 0 auto }
+.subtitles-list { flex: 1 1 auto; border-left: 1px solid #ddd; padding-left: 12px; overflow: auto }
+.controls { margin-top: 8px; display: flex; gap: 8px }
+
+.subtitle-item { transition: background-color 160ms ease }
+.subtitle-active { background-color: rgba(255, 235, 150, 0.6) }
+
+.time-btn {
+	border: 1px solid #ddd;
+	background: #fff;
+	padding: 4px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+}
+.time-btn:hover { background: #f3f3f3 }
+
+.delete-btn {
+	border: 1px solid #f0c8c8;
+	background: #fff;
+	color: #b00;
+	padding: 4px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+}
+.delete-btn:hover { background: #fff0f0 }
