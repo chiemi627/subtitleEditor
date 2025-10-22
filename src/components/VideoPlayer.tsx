@@ -1,15 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 type Props = {
   onTimeUpdate?: (time: number, paused: boolean) => void
   onReady?: (ctrl: { playFrom: (time: number) => void; pause: () => void }) => void
 }
 
-export default function VideoPlayer({ onTimeUpdate, onReady }: Props) {
+export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [duration, setDuration] = useState(0)
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(true)
+  const readyCalledRef = useRef(false)
 
   useEffect(() => {
     const v = videoRef.current
@@ -33,19 +34,24 @@ export default function VideoPlayer({ onTimeUpdate, onReady }: Props) {
 
   // expose a simple controller to parent so it can request seeking+play
   useEffect(() => {
-    if (!onReady) return
-    onReady({
-      playFrom: (time: number) => {
-        if (!videoRef.current) return
-        videoRef.current.currentTime = Math.max(0, time)
-        videoRef.current.play()
-      },
-      pause: () => {
-        if (!videoRef.current) return
-        videoRef.current.pause()
-      }
-    })
-  }, [onReady])
+    // call onReady only once (guarded) to avoid repeated parent state updates
+    if (readyCalledRef.current) return
+    if (typeof onReady === 'function') {
+      readyCalledRef.current = true
+      onReady({
+        playFrom: (t: number) => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = t
+            videoRef.current.play()
+          }
+        },
+        pause: () => {
+          videoRef.current?.pause()
+        },
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // intentionally empty: guarded by readyCalledRef
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]

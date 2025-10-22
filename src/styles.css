@@ -3,11 +3,49 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neu
 header { margin-bottom: 12px }
 .layout { display: flex; gap: 12px; height: calc(100vh - 80px); /* leave room for header */ }
 .video-area { width: 680px; max-width: 45%; flex: 0 0 auto }
-.subtitles-list { flex: 1 1 auto; border-left: 1px solid #ddd; padding-left: 12px; overflow: auto }
+/* 区切り線を不要にしたので border-left を削除 */
+.subtitles-list { flex: 1 1 auto; padding-left: 12px; overflow: auto }
 .controls { margin-top: 8px; display: flex; gap: 8px }
 
-.subtitle-item { transition: background-color 160ms ease }
+.subtitle-item {
+  border-bottom: none; /* ensure no line even if inline styles exist */
+  padding: 8px;
+  background: transparent;
+}
+
 .subtitle-active { background-color: rgba(255, 235, 150, 0.6) }
+
+.insert-between-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.insert-between {
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  padding: 0;
+  font-size: 14px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f7f3;
+  color: #333;
+  cursor: pointer;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.insert-between:hover {
+  background: #e6efe6;
+}
+
+.insert-between:focus {
+  outline: 2px solid #9ad09a;
+  outline-offset: 2px;
+}
 
 .time-btn {
 	border: 1px solid #ddd;
@@ -15,7 +53,7 @@ header { margin-bottom: 12px }
 	padding: 4px 6px;
 	border-radius: 4px;
 	cursor: pointer;
-	font-size: 12px;
+	font-size: 13px;
 }
 .time-btn:hover { background: #f3f3f3 }
 
@@ -37,6 +75,6 @@ header { margin-bottom: 12px }
 	padding: 4px 6px;
 	border-radius: 4px;
 	cursor: pointer;
-	font-size: 12px;
+	font-size: 13px;
 }
 .delete-btn:hover { background: #fff0f0 }
