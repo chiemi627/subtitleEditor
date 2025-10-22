@@ -178,6 +178,26 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                   ⏸
                 </button>
                 <button
+                  className="insert-btn"
+                  title="この行の後に新しい字幕を挿入"
+                  aria-label={`挿入-${s.id}`}
+                  onClick={() => {
+                    // insert after this id
+                    const idx = items.findIndex((it) => it.id === s.id)
+                    const next = items.map((it) => ({ ...it }))
+                    const nextItem = items[idx + 1]
+                    const start = s.end
+                    const end = nextItem ? (s.end + nextItem.start) / 2 : s.end + 2
+                    const newId = (Math.max(0, ...items.map((it) => it.id)) || 0) + 1
+                    const newSub: Subtitle = { id: newId, start: Math.round(start * 1000) / 1000, end: Math.round(end * 1000) / 1000, text: '' }
+                    next.splice(idx + 1, 0, newSub)
+                    setItems(next)
+                    onChange(next)
+                  }}
+                >
+                  ＋
+                </button>
+                <button
                   className="delete-btn"
                   title="この字幕を削除"
                   aria-label={`字幕削除-${s.id}`}

@@ -19,6 +19,17 @@ header { margin-bottom: 12px }
 }
 .time-btn:hover { background: #f3f3f3 }
 
+.insert-btn {
+	border: 1px solid #cfe8d8;
+	background: #fff;
+	color: #0a7;
+	padding: 4px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+}
+.insert-btn:hover { background: #f0fff6 }
+
 .delete-btn {
 	border: 1px solid #f0c8c8;
 	background: #fff;
