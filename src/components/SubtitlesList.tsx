@@ -152,6 +152,48 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
     // focus new item later if needed
   }
 
+  // Split subtitle at cursor position when Shift+Enter is pressed
+  const splitSubtitle = (id: number, textarea: HTMLTextAreaElement) => {
+    const idx = items.findIndex((it) => it.id === id)
+    if (idx === -1) return
+    const cur = items[idx]
+    const pos = textarea.selectionStart ?? textarea.value.length
+  const leftText = cur.text.slice(0, pos)
+  // remove any leading newline(s) from the right side so the new subtitle starts at the first line
+  const rawRight = cur.text.slice(pos)
+  const rightText = rawRight.replace(/^\r?\n+/, '')
+
+    // Determine split time: prefer currentTime if it's inside this subtitle, otherwise midpoint
+    let splitT = (typeof currentTime === 'number' && currentTime >= cur.start && currentTime <= cur.end)
+      ? Math.round(currentTime * 1000) / 1000
+      : Math.round(((cur.start + cur.end) / 2) * 1000) / 1000
+
+    // Ensure splitT strictly between start and end
+    if (splitT <= cur.start) splitT = Math.round(((cur.start + cur.end) / 2) * 1000) / 1000
+    if (splitT >= cur.end) splitT = Math.round(((cur.start + cur.end) / 2) * 1000) / 1000
+
+    const newId = (items.length > 0 ? Math.max(...items.map((it) => it.id)) : 0) + 1
+  const newSub: Subtitle = { id: newId, start: splitT, end: cur.end, text: rightText }
+
+    const next = items.map((it) => ({ ...it }))
+    next[idx].end = splitT
+    next[idx].text = leftText
+    next.splice(idx + 1, 0, newSub)
+
+    setItems(next)
+    onChange(next)
+
+    // focus the new textarea after DOM updates
+    setTimeout(() => {
+      const el = document.getElementById(`textarea-${newId}`) as HTMLTextAreaElement | null
+      if (el) {
+        el.focus()
+        el.selectionStart = 0
+        el.selectionEnd = 0
+      }
+    }, 0)
+  }
+
   return (
     <aside className="subtitles-list">
       <h2>Subtitles</h2>
@@ -253,8 +295,15 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                 </div>
 
                 <textarea
+                  id={`textarea-${s.id}`}
                   value={s.text}
                   onChange={(e) => updateItem(s.id, { text: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.shiftKey) {
+                      e.preventDefault()
+                      splitSubtitle(s.id, e.currentTarget as HTMLTextAreaElement)
+                    }
+                  }}
                   style={{ width: '100%', minHeight: 48 }}
                 />
               </div>
