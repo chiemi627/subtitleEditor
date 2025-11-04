@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { parseSrt, stringifySrt, Subtitle } from '../utils/srt'
 
+type Action = 'split' | 'next' | 'prev' | 'playpause' | 'merge' | 'setStart'
+type Binding = { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }
 type Props = {
   subtitles: Subtitle[]
   onChange: (subs: Subtitle[]) => void
   currentTime?: number
   playFrom?: (t: number) => void
   pause?: () => void
-  keybindings?: Record<'split' | 'next' | 'prev', { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }>
+  togglePlay?: () => void
+  keybindings?: Record<Action, Binding>
+  isPaused?: boolean
   tabCreatesNewAtEnd?: boolean
 }
 
@@ -28,14 +32,13 @@ function hhmmssToSec(s: string) {
   return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + milli / 1000
 }
 
-export default function SubtitlesList({ subtitles, onChange, currentTime = 0, playFrom, pause, keybindings, tabCreatesNewAtEnd = false }: Props) {
+export default function SubtitlesList({ subtitles, onChange, currentTime = 0, playFrom, pause, togglePlay, keybindings, isPaused = true, tabCreatesNewAtEnd = false }: Props) {
   const [items, setItems] = useState<Subtitle[]>(subtitles || [])
   const [activeId, setActiveId] = useState<number | null>(null)
   const lastStartSetRef = useRef<number | null>(null)
   const scrollTimerRef = useRef<number | null>(null)
 
   useEffect(() => setItems(subtitles || []), [subtitles])
-
   // Update activeId only when it actually changes to avoid flicker and
   // unnecessary DOM writes. Scrolling happens when activeId changes.
   useEffect(() => {
@@ -75,6 +78,49 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
       }
     }
   }, [activeId])
+
+  // グローバル Tab ハンドラ:
+  // - テキストエリアにフォーカスがない時に Tab が押されたら、
+  //   currentTime に対応する字幕（または最も近い字幕）にフォーカスを移す。
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const ae = document.activeElement as HTMLElement | null
+      // 既に字幕用 textarea にフォーカスが当たっている場合は無視
+      if (ae && ae.id && ae.id.startsWith('textarea-')) return
+      if (!items || items.length === 0) return
+
+      // 現在時刻に含まれる字幕を優先して探す
+      const inRange = items.find((s) => typeof currentTime === 'number' && currentTime >= s.start && currentTime <= s.end)
+      let target: typeof inRange | undefined = inRange
+
+      if (!target) {
+        // なければ各字幕の中央点に対する距離で最も近いものを選ぶ
+        let best: { id: number; dist: number } | null = null
+        for (const s of items) {
+          const center = (s.start + s.end) / 2
+          const d = Math.abs((typeof currentTime === 'number' ? currentTime : 0) - center)
+          if (!best || d < best.dist) best = { id: s.id, dist: d }
+        }
+        if (best) target = items.find((it) => it.id === best!.id)
+      }
+
+      if (target) {
+        e.preventDefault()
+        setTimeout(() => {
+          const el = document.getElementById(`textarea-${target!.id}`) as HTMLTextAreaElement | null
+          if (el) {
+            el.focus()
+            el.selectionStart = 0
+            el.selectionEnd = 0
+          }
+        }, 0)
+      }
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [items, currentTime])
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -300,57 +346,159 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                   id={`textarea-${s.id}`}
                   value={s.text}
                   onChange={(e) => updateItem(s.id, { text: e.target.value })}
-                  onKeyDown={(e) => {
-                    // Shift+Enter: split subtitle at caret
-                        // Use configurable keybindings if provided
-                        const kb = keybindings || { split: { key: 'Enter', shift: true }, next: { key: 'Tab' }, prev: { key: 'Tab', shift: true } }
-                        const matches = (binding: { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }) => {
-                          if (!binding) return false
-                          if (binding.key.toLowerCase() !== e.key.toLowerCase()) return false
-                          if (Boolean(binding.shift) !== e.shiftKey) return false
-                          if (Boolean(binding.ctrl) !== e.ctrlKey) return false
-                          if (Boolean(binding.alt) !== e.altKey) return false
-                          if (Boolean(binding.meta) !== e.metaKey) return false
-                          return true
-                        }
+                                  onKeyDown={(e) => {
+                                    // Use configurable keybindings if provided
+                                    const defaultKb: Record<Action, Binding> = { split: { key: 'Enter', ctrl: true }, next: { key: 'Tab' }, prev: { key: 'Tab', shift: true }, playpause: { key: 'p', ctrl: true }, merge: { key: 'Backspace', ctrl: true }, setStart: { key: 't', ctrl: true } }
+                                    const kb = keybindings || defaultKb
+                                    const normKey = (k: string) => {
+                                      if (!k) return k
+                                      if (k === ' ' || k.toLowerCase() === 'space' || k.toLowerCase() === 'spacebar') return 'space'
+                                      return k.toLowerCase()
+                                    }
+                                    const eventKeyNorm = () => {
+                                      const ek = e.key
+                                      if (!ek) return ''
+                                      if (ek === ' ' || ek.toLowerCase() === 'space' || ek.toLowerCase() === 'spacebar') return 'space'
+                                      return ek.toLowerCase()
+                                    }
+                                    const matches = (binding: Binding | undefined) => {
+                                      if (!binding) return false
+                                      if (normKey(binding.key) !== eventKeyNorm()) return false
+                                      if (Boolean(binding.shift) !== e.shiftKey) return false
+                                      if (Boolean(binding.ctrl) !== e.ctrlKey) return false
+                                      if (Boolean(binding.alt) !== e.altKey) return false
+                                      if (Boolean(binding.meta) !== e.metaKey) return false
+                                      return true
+                                    }
 
-                        if (matches(kb.split)) {
-                          e.preventDefault()
-                          splitSubtitle(s.id, e.currentTarget as HTMLTextAreaElement)
-                          return
-                        }
+                                    if (matches(kb.split)) {
+                                      e.preventDefault()
+                                      splitSubtitle(s.id, e.currentTarget as HTMLTextAreaElement)
+                                      return
+                                    }
 
-                        if (matches(kb.next) || matches(kb.prev)) {
-                          e.preventDefault()
-                          const idx = items.findIndex((it) => it.id === s.id)
-                          if (idx === -1) return
-                          const forward = matches(kb.next)
-                          let targetIdx = forward ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1)
+                                    if (matches(kb.setStart)) {
+                                      e.preventDefault()
+                                      setStartToCurrent(s.id)
+                                      return
+                                    }
 
-                          // If at end and pressing Tab forward and setting says to create new, do it
-                          if (forward && idx === items.length - 1 && tabCreatesNewAtEnd) {
-                            const newId = insertAt(items.length)
-                            setTimeout(() => {
-                              const el = document.getElementById(`textarea-${newId}`) as HTMLTextAreaElement | null
-                              if (el) {
-                                el.focus()
-                                el.selectionStart = 0
-                                el.selectionEnd = 0
-                              }
-                            }, 0)
-                            return
-                          }
+                                    if (matches(kb.merge)) {
+                                      e.preventDefault()
+                                      // Merge current subtitle with previous one, or move only selected text
+                                      const idx = items.findIndex((it) => it.id === s.id)
+                                      if (idx > 0) {
+                                        const prev = items[idx - 1]
+                                        const nextItems = items.map((it) => ({ ...it }))
+                                        const textarea = e.currentTarget as HTMLTextAreaElement
+                                        const selStart = textarea.selectionStart ?? 0
+                                        const selEnd = textarea.selectionEnd ?? selStart
 
-                          const target = items[targetIdx]
-                          if (!target) return
-                          const el = document.getElementById(`textarea-${target.id}`) as HTMLTextAreaElement | null
-                          if (el) {
-                            el.focus()
-                            el.selectionStart = 0
-                            el.selectionEnd = 0
-                          }
-                        }
-                  }}
+                                        if (selEnd > selStart) {
+                                          // Move selected substring to previous subtitle (append without separator)
+                                          const selected = textarea.value.slice(selStart, selEnd)
+                                          const beforePrev = nextItems[idx - 1].text || ''
+                                          nextItems[idx - 1].text = beforePrev + selected
+                                          // remove selected from current
+                                          nextItems[idx].text = textarea.value.slice(0, selStart) + textarea.value.slice(selEnd)
+                                          setItems(nextItems)
+                                          onChange(nextItems)
+                                          // focus previous textarea and place cursor after appended text
+                                          setTimeout(() => {
+                                            const el = document.getElementById(`textarea-${prev.id}`) as HTMLTextAreaElement | null
+                                            if (el) {
+                                              el.focus()
+                                              const pos = (beforePrev + selected).length
+                                              el.selectionStart = pos
+                                              el.selectionEnd = pos
+                                            }
+                                          }, 0)
+                                        } else {
+                                          // No selection: append current text to previous and REMOVE current subtitle
+                                          const mergedText = [prev.text, s.text].filter(Boolean).join('')
+                                          nextItems[idx - 1].text = mergedText
+                                          // extend end time to current's end
+                                          nextItems[idx - 1].end = s.end
+                                          // remove current subtitle from list
+                                          nextItems.splice(idx, 1)
+                                          setItems(nextItems)
+                                          onChange(nextItems)
+                                          // focus previous textarea
+                                          setTimeout(() => {
+                                            const el = document.getElementById(`textarea-${prev.id}`) as HTMLTextAreaElement | null
+                                            if (el) {
+                                              el.focus()
+                                              el.selectionStart = el.value.length
+                                              el.selectionEnd = el.value.length
+                                            }
+                                          }, 0)
+                                        }
+                                      }
+                                      return
+                                    }
+
+                                    if (matches(kb.playpause)) {
+                                      e.preventDefault()
+                                      // 動作仕様:
+                                      // - 一時停止中 (isPaused === true) にショートカットが押された場合:
+                                      //     - 停止位置 (currentTime) が字幕の範囲内ならその停止位置から再生
+                                      //     - そうでなければ字幕の開始時刻から再生
+                                      // - 再生中の場合:
+                                      //     - 再生位置が字幕範囲内なら一時停止
+                                      //     - 範囲外なら字幕の開始時刻へシークして再生
+                                      const now = typeof currentTime === 'number' ? currentTime : 0
+                                      const inRange = now >= s.start && now <= s.end
+                                      if (isPaused) {
+                                        if (inRange) {
+                                          // 停止位置が範囲内 -> その位置から再生
+                                          if (typeof playFrom === 'function') playFrom(now)
+                                        } else {
+                                          // 範囲外 -> 字幕開始から再生
+                                          if (typeof playFrom === 'function') playFrom(s.start)
+                                        }
+                                      } else {
+                                        if (inRange) {
+                                          // 再生中かつ範囲内 -> 一時停止
+                                          if (typeof pause === 'function') pause()
+                                        } else {
+                                          // 再生中だが範囲外 -> 字幕開始へシークして再生
+                                          if (typeof playFrom === 'function') playFrom(s.start)
+                                        }
+                                      }
+                                      return
+                                    }
+
+                                    if (matches(kb.next) || matches(kb.prev)) {
+                                      e.preventDefault()
+                                      const idx = items.findIndex((it) => it.id === s.id)
+                                      if (idx === -1) return
+                                      const forward = matches(kb.next)
+                                      let targetIdx = forward ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1)
+
+                                      // If at end and pressing Tab forward and setting says to create new, do it
+                                      if (forward && idx === items.length - 1 && tabCreatesNewAtEnd) {
+                                        const newId = insertAt(items.length)
+                                        setTimeout(() => {
+                                          const el = document.getElementById(`textarea-${newId}`) as HTMLTextAreaElement | null
+                                          if (el) {
+                                            el.focus()
+                                            el.selectionStart = 0
+                                            el.selectionEnd = 0
+                                          }
+                                        }, 0)
+                                        return
+                                      }
+
+                                      const target = items[targetIdx]
+                                      if (!target) return
+                                      const el = document.getElementById(`textarea-${target.id}`) as HTMLTextAreaElement | null
+                                      if (el) {
+                                        el.focus()
+                                        el.selectionStart = 0
+                                        el.selectionEnd = 0
+                                      }
+                                    }
+                                  }}
                   style={{ width: '100%', minHeight: 48 }}
                 />
               </div>

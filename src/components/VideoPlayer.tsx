@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 type Props = {
   onTimeUpdate?: (time: number, paused: boolean) => void
-  onReady?: (ctrl: { playFrom: (time: number) => void; pause: () => void }) => void
+  onReady?: (ctrl: { playFrom: (time: number) => void; pause: () => void; toggle?: () => void }) => void
 }
 
 export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) {
@@ -47,6 +47,11 @@ export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) 
         },
         pause: () => {
           videoRef.current?.pause()
+        },
+        toggle: () => {
+          if (!videoRef.current) return
+          if (videoRef.current.paused) videoRef.current.play()
+          else videoRef.current.pause()
         },
       })
     }

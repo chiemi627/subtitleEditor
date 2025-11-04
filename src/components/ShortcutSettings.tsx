@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 
 type Binding = { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }
 
+type Action = 'split' | 'next' | 'prev' | 'playpause' | 'merge' | 'setStart'
 type Props = {
-  keybindings: Record<'split' | 'next' | 'prev', Binding>
-  setKeybindings: (kb: Record<'split' | 'next' | 'prev', Binding>) => void
+  keybindings: Record<Action, Binding>
+  setKeybindings: (kb: Record<Action, Binding>) => void
   tabCreatesNewAtEnd: boolean
   setTabCreatesNewAtEnd: (v: boolean) => void
 }
@@ -15,18 +16,20 @@ function bindingToLabel(b: Binding) {
   if (b.alt) parts.push('Alt')
   if (b.shift) parts.push('Shift')
   if (b.meta) parts.push('Meta')
-  parts.push(b.key.toUpperCase())
+  const k = b.key
+  if (k === ' ' || k === '') parts.push('Space')
+  else parts.push(String(k).toUpperCase())
   return parts.join(' + ')
 }
 
 export default function ShortcutSettings({ keybindings, setKeybindings, tabCreatesNewAtEnd, setTabCreatesNewAtEnd }: Props) {
-  const [editing, setEditing] = useState<null | 'split' | 'next' | 'prev'>(null)
+  const [editing, setEditing] = useState<null | Action>(null)
 
-  const startEdit = (action: 'split' | 'next' | 'prev') => {
+  const startEdit = (action: Action) => {
     setEditing(action)
   }
 
-  const onCapture = (e: React.KeyboardEvent<HTMLInputElement>, action: 'split' | 'next' | 'prev') => {
+  const onCapture = (e: React.KeyboardEvent<HTMLInputElement>, action: Action) => {
     e.preventDefault()
     const b: Binding = { key: e.key }
     if (e.ctrlKey) b.ctrl = true
@@ -44,12 +47,15 @@ export default function ShortcutSettings({ keybindings, setKeybindings, tabCreat
       <div style={{ marginTop: 8 }}>
         <div style={{ marginBottom: 6 }}>キーバインディング（キーをクリックして、割り当てたいキーを押してください）</div>
 
-        {(['split', 'next', 'prev'] as const).map((action) => (
+        {(['split', 'next', 'prev', 'playpause', 'merge', 'setStart'] as const).map((action) => (
           <div key={action} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <div style={{ width: 220 }}>
               {action === 'split' && '字幕の分割'}
               {action === 'next' && '編集を次に進める'}
               {action === 'prev' && '編集を前に戻す'}
+              {action === 'playpause' && '再生 / 一時停止 (トグル)'}
+              {action === 'merge' && '前の字幕と結合 (Ctrl+Backspace)'}
+              {action === 'setStart' && '開始時刻を現在時刻に設定 (Ctrl+T)'}
             </div>
             <input
               readOnly
