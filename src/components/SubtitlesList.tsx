@@ -7,6 +7,8 @@ type Props = {
   currentTime?: number
   playFrom?: (t: number) => void
   pause?: () => void
+  keybindings?: Record<'split' | 'next' | 'prev', { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }>
+  tabCreatesNewAtEnd?: boolean
 }
 
 function secToHHMMSS(sec: number) {
@@ -26,7 +28,7 @@ function hhmmssToSec(s: string) {
   return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + milli / 1000
 }
 
-export default function SubtitlesList({ subtitles, onChange, currentTime = 0, playFrom, pause }: Props) {
+export default function SubtitlesList({ subtitles, onChange, currentTime = 0, playFrom, pause, keybindings, tabCreatesNewAtEnd = false }: Props) {
   const [items, setItems] = useState<Subtitle[]>(subtitles || [])
   const [activeId, setActiveId] = useState<number | null>(null)
   const lastStartSetRef = useRef<number | null>(null)
@@ -149,7 +151,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
     next.splice(index, 0, newSub)
     setItems(next)
     onChange(next)
-    // focus new item later if needed
+    return newId
   }
 
   // Split subtitle at cursor position when Shift+Enter is pressed
@@ -163,7 +165,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
   const rawRight = cur.text.slice(pos)
   const rightText = rawRight.replace(/^\r?\n+/, '')
 
-    // Determine split time: prefer currentTime if it's inside this subtitle, otherwise midpoint
+    // Determine split time (smart behavior): prefer currentTime if within, otherwise midpoint
     let splitT = (typeof currentTime === 'number' && currentTime >= cur.start && currentTime <= cur.end)
       ? Math.round(currentTime * 1000) / 1000
       : Math.round(((cur.start + cur.end) / 2) * 1000) / 1000
@@ -180,8 +182,8 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
     next[idx].text = leftText
     next.splice(idx + 1, 0, newSub)
 
-    setItems(next)
-    onChange(next)
+  setItems(next)
+  onChange(next)
 
     // focus the new textarea after DOM updates
     setTimeout(() => {
@@ -299,10 +301,55 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                   value={s.text}
                   onChange={(e) => updateItem(s.id, { text: e.target.value })}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.shiftKey) {
-                      e.preventDefault()
-                      splitSubtitle(s.id, e.currentTarget as HTMLTextAreaElement)
-                    }
+                    // Shift+Enter: split subtitle at caret
+                        // Use configurable keybindings if provided
+                        const kb = keybindings || { split: { key: 'Enter', shift: true }, next: { key: 'Tab' }, prev: { key: 'Tab', shift: true } }
+                        const matches = (binding: { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }) => {
+                          if (!binding) return false
+                          if (binding.key.toLowerCase() !== e.key.toLowerCase()) return false
+                          if (Boolean(binding.shift) !== e.shiftKey) return false
+                          if (Boolean(binding.ctrl) !== e.ctrlKey) return false
+                          if (Boolean(binding.alt) !== e.altKey) return false
+                          if (Boolean(binding.meta) !== e.metaKey) return false
+                          return true
+                        }
+
+                        if (matches(kb.split)) {
+                          e.preventDefault()
+                          splitSubtitle(s.id, e.currentTarget as HTMLTextAreaElement)
+                          return
+                        }
+
+                        if (matches(kb.next) || matches(kb.prev)) {
+                          e.preventDefault()
+                          const idx = items.findIndex((it) => it.id === s.id)
+                          if (idx === -1) return
+                          const forward = matches(kb.next)
+                          let targetIdx = forward ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1)
+
+                          // If at end and pressing Tab forward and setting says to create new, do it
+                          if (forward && idx === items.length - 1 && tabCreatesNewAtEnd) {
+                            const newId = insertAt(items.length)
+                            setTimeout(() => {
+                              const el = document.getElementById(`textarea-${newId}`) as HTMLTextAreaElement | null
+                              if (el) {
+                                el.focus()
+                                el.selectionStart = 0
+                                el.selectionEnd = 0
+                              }
+                            }, 0)
+                            return
+                          }
+
+                          const target = items[targetIdx]
+                          if (!target) return
+                          const el = document.getElementById(`textarea-${target.id}`) as HTMLTextAreaElement | null
+                          if (el) {
+                            el.focus()
+                            el.selectionStart = 0
+                            el.selectionEnd = 0
+                          }
+                        }
                   }}
                   style={{ width: '100%', minHeight: 48 }}
                 />
