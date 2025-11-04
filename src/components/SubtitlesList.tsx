@@ -449,13 +449,8 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                                       const now = typeof currentTime === 'number' ? currentTime : 0
                                       const inRange = now >= s.start && now <= s.end
                                       if (isPaused) {
-                                        if (inRange) {
-                                          // 停止位置が範囲内 -> その位置から再生
-                                          if (typeof playFrom === 'function') playFrom(now)
-                                        } else {
-                                          // 範囲外 -> 字幕開始から再生
-                                          if (typeof playFrom === 'function') playFrom(s.start)
-                                        }
+                                        // 変更: 一時停止中であっても、常に字幕の開始時刻から再生する
+                                        if (typeof playFrom === 'function') playFrom(s.start)
                                       } else {
                                         if (inRange) {
                                           // 再生中かつ範囲内 -> 一時停止
