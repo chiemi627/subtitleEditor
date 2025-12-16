@@ -89,7 +89,14 @@ export default function App() {
       )}
 
       <main className="layout">
-        <VideoPlayer onTimeUpdate={(t: number, p?: boolean) => { setCurrentTime(t); if (typeof p === 'boolean') setIsPaused(p) }} onReady={(c: { playFrom: (t: number) => void; pause?: () => void; toggle?: () => void }) => setPlayerCtrl(c)} />
+        <VideoPlayer
+          subtitles={subtitles}
+          onTimeUpdate={(t: number, p?: boolean) => {
+            setCurrentTime(t)
+            if (typeof p === 'boolean') setIsPaused(p)
+          }}
+          onReady={(c: { playFrom: (t: number) => void; pause?: () => void; toggle?: () => void }) => setPlayerCtrl(c)}
+        />
         <SubtitlesList
           subtitles={subtitles}
           onChange={setSubtitles}

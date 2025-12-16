@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Subtitle } from '../utils/srt'
 
 type Props = {
   onTimeUpdate?: (time: number, paused: boolean) => void
   onReady?: (ctrl: { playFrom: (time: number) => void; pause: () => void; toggle?: () => void }) => void
+  subtitles?: Subtitle[]
 }
 
 export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) {
@@ -91,6 +93,11 @@ export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) 
     return withMs
   }
 
+  const currentSubtitle = useMemo(() => {
+    if (!props.subtitles || props.subtitles.length === 0) return null
+    return props.subtitles.find((s) => current >= s.start && current <= s.end) ?? null
+  }, [current, props.subtitles])
+
   return (
     <section className="video-area">
       <div className="video-area__input">
@@ -102,6 +109,11 @@ export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) 
 
       <div className="video-area__player">
         <video ref={videoRef} className="video-area__video" />
+        {currentSubtitle ? (
+          <div className="video-area__overlay" aria-live="polite">
+            <span className="video-area__subtitle">{currentSubtitle.text}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="controls video-area__controls">
