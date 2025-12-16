@@ -300,7 +300,7 @@ export default function SubtitlesList({
             }}
             title={`自動スクロール ${autoScrollEnabled ? 'ON' : 'OFF'}`}
           >
-            自動: {autoScrollEnabled ? 'ON' : 'OFF'}
+            自動スクロール: {autoScrollEnabled ? 'ON' : 'OFF'}
           </button>
           <button className="time-btn compact" onClick={exportSrt} disabled={items.length === 0} title="SRTをエクスポート">
             エクスポート
