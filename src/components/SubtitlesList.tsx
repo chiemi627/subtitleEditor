@@ -186,6 +186,17 @@ export default function SubtitlesList({
     lastStartSetRef.current = id
   }
 
+  const shiftStartEarlier = (id: number) => {
+    const idx = items.findIndex((it) => it.id === id)
+    if (idx === -1) return
+    const next = items.map((it) => ({ ...it }))
+    const earlier = Math.max(0, Math.round((next[idx].start - 0.5) * 1000) / 1000)
+    next[idx].start = earlier
+    if (idx > 0 && next[idx - 1].end > earlier) next[idx - 1].end = earlier
+    setItems(next)
+    onChange(next)
+  }
+
   const setEndToCurrent = (id: number) => {
     const t = Math.round(currentTime * 1000) / 1000
     const idx = items.findIndex((it) => it.id === id)
@@ -346,28 +357,65 @@ export default function SubtitlesList({
                 className={s.id === activeId ? 'subtitle-item subtitle-active' : 'subtitle-item'}
                 style={{ padding: 8, borderBottom: '1px solid #eee' }}
               >
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                  <button
-                    className="time-btn"
-                    title="この字幕の開始 0.5 秒前から再生"
-                    aria-label={`開始0.5秒前から再生-${s.id}`}
-                    onClick={() => {
-                      const t = Math.max(0, s.start - 0.5)
-                      if (typeof playFrom === 'function') playFrom(t)
-                    }}
-                  >
-                    ▶
-                  </button>
-                  <button
-                    className="time-btn"
-                    title="一時停止"
-                    aria-label={`一時停止-${s.id}`}
-                    onClick={() => {
-                      if (typeof pause === 'function') pause()
-                    }}
-                  >
-                    ⏸
-                  </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                      className="time-btn"
+                      title="この字幕の開始 0.5 秒前から再生"
+                      aria-label={`開始0.5秒前から再生-${s.id}`}
+                      onClick={() => {
+                        const t = Math.max(0, s.start - 0.5)
+                        if (typeof playFrom === 'function') playFrom(t)
+                      }}
+                    >
+                      ▶
+                    </button>
+                    <button
+                      className="time-btn"
+                      title="一時停止"
+                      aria-label={`一時停止-${s.id}`}
+                      onClick={() => {
+                        if (typeof pause === 'function') pause()
+                      }}
+                    >
+                      ⏸
+                    </button>
+                    <button
+                      className="time-btn"
+                      onClick={() => shiftStartEarlier(s.id)}
+                      title="開始時刻を0.5秒前にする"
+                      aria-label={`開始を0.5秒前に-${s.id}`}
+                    >
+                      ←0.5s
+                    </button>
+                    <input
+                      value={secToHHMMSS(s.start)}
+                      onChange={(e) => updateItem(s.id, { start: hhmmssToSec(e.target.value) })}
+                      style={{ width: 130 }}
+                    />
+                    <button
+                      className="time-btn"
+                      onClick={() => setStartToCurrent(s.id)}
+                      title="動画の現在時刻を開始に設定"
+                      aria-label={`開始を現在に設定-${s.id}`}
+                    >
+                      <span aria-hidden>⏱</span>
+                    </button>
+                    <span>→</span>
+                    <input
+                      value={secToHHMMSS(s.end)}
+                      onChange={(e) => updateItem(s.id, { end: hhmmssToSec(e.target.value) })}
+                      style={{ width: 130 }}
+                    />
+                    <button
+                      className="time-btn"
+                      onClick={() => setEndToCurrent(s.id)}
+                      title="動画の現在時刻を終了に設定"
+                      aria-label={`終了を現在に設定-${s.id}`}
+                    >
+                      <span aria-hidden>⏱</span>
+                    </button>
+                  </div>
                   <button
                     className="delete-btn"
                     title="この字幕を削除"
@@ -377,36 +425,9 @@ export default function SubtitlesList({
                       setItems(next)
                       onChange(next)
                     }}
+                    style={{ marginLeft: 'auto' }}
                   >
                     🗑️
-                  </button>
-
-                  <input
-                    value={secToHHMMSS(s.start)}
-                    onChange={(e) => updateItem(s.id, { start: hhmmssToSec(e.target.value) })}
-                    style={{ width: 130 }}
-                  />
-                  <button
-                    className="time-btn"
-                    onClick={() => setStartToCurrent(s.id)}
-                    title="動画の現在時刻を開始に設定"
-                    aria-label={`開始を現在に設定-${s.id}`}
-                  >
-                    <span aria-hidden>⏱</span>
-                  </button>
-                  <span>→</span>
-                  <input
-                    value={secToHHMMSS(s.end)}
-                    onChange={(e) => updateItem(s.id, { end: hhmmssToSec(e.target.value) })}
-                    style={{ width: 130 }}
-                  />
-                  <button
-                    className="time-btn"
-                    onClick={() => setEndToCurrent(s.id)}
-                    title="動画の現在時刻を終了に設定"
-                    aria-label={`終了を現在に設定-${s.id}`}
-                  >
-                    <span aria-hidden>⏱</span>
                   </button>
                 </div>
 
