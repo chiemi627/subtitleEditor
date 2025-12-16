@@ -288,7 +288,25 @@ export default function SubtitlesList({
 
   return (
     <aside className="subtitles-list">
-      <h2>Subtitles</h2>
+      <div className="subtitles-header" style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+        <h2 style={{ margin: 0 }}>Subtitles</h2>
+        <div className="file-controls__actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            className="time-btn compact"
+            aria-pressed={autoScrollEnabled}
+            onClick={() => {
+              if (typeof onToggleAutoScroll === 'function') onToggleAutoScroll()
+            }}
+            title={`自動スクロール ${autoScrollEnabled ? 'ON' : 'OFF'}`}
+          >
+            自動: {autoScrollEnabled ? 'ON' : 'OFF'}
+          </button>
+          <button className="time-btn compact" onClick={exportSrt} disabled={items.length === 0} title="SRTをエクスポート">
+            エクスポート
+          </button>
+        </div>
+      </div>
       <div className="file-controls">
         <div className="file-picker">
           <span className="file-picker__label">SRT 読み込み</span>
@@ -320,21 +338,7 @@ export default function SubtitlesList({
           />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
-          <button
-            type="button"
-            className="time-btn"
-            aria-pressed={autoScrollEnabled}
-            onClick={() => {
-              if (typeof onToggleAutoScroll === 'function') onToggleAutoScroll()
-            }}
-          >
-            自動スクロール {autoScrollEnabled ? 'ON' : 'OFF'}
-          </button>
-          <button className="time-btn" onClick={exportSrt} disabled={items.length === 0}>
-            SRT をエクスポート
-          </button>
-        </div>
+        
       </div>
 
       <div style={{ maxHeight: '70vh', overflow: 'auto' }}>
@@ -437,7 +441,7 @@ export default function SubtitlesList({
                   id={`textarea-${s.id}`}
                   value={s.text}
                   onChange={(e) => updateItem(s.id, { text: e.target.value })}
-                                  onKeyDown={(e) => {
+                  onKeyDown={(e) => {
                                     // Use configurable keybindings if provided
                                     const defaultKb: Record<Action, Binding> = { split: { key: 'Enter', ctrl: true }, next: { key: 'Tab' }, prev: { key: 'Tab', shift: true }, playpause: { key: 'p', ctrl: true }, merge: { key: 'Backspace', ctrl: true }, setStart: { key: 't', ctrl: true } }
                                     const kb = keybindings || defaultKb
@@ -585,7 +589,7 @@ export default function SubtitlesList({
                                       }
                                     }
                                   }}
-                  style={{ width: '100%', minHeight: 48 }}
+                  style={{ width: '100%', minHeight: 36, padding: 8, fontSize: 14, lineHeight: 1.35 }}
                 />
               </div>
 
