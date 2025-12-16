@@ -51,3 +51,19 @@ export function stringifySrt(subs: Subtitle[]): string {
     })
     .join('\n')
 }
+
+export function parsePlainTextSubtitles(text: string, durationPerLineSec = 5): Subtitle[] {
+  const lines = text.replace(/\r/g, '').split('\n')
+  const out: Subtitle[] = []
+  let t = 0
+  let id = 1
+  for (const line of lines) {
+    // 空行はスキップ（必要ならここを削除して空行も字幕化できます）
+    if (!line.trim()) continue
+    const start = Math.round(t * 1000) / 1000
+    const end = Math.round((t + durationPerLineSec) * 1000) / 1000
+    out.push({ id: id++, start, end, text: line })
+    t += durationPerLineSec
+  }
+  return out
+}

@@ -78,3 +78,20 @@ header { margin-bottom: 12px }
 	font-size: 13px;
 }
 .delete-btn:hover { background: #fff0f0 }
+
+.file-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.file-picker {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.file-picker__label { font-weight: 600; }
+.file-picker__name { font-size: 12px; color: #666; }

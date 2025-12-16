@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { parseSrt, stringifySrt, Subtitle } from '../utils/srt'
+import { parseSrt, stringifySrt, Subtitle, parsePlainTextSubtitles } from '../utils/srt'
 
 type Action = 'split' | 'next' | 'prev' | 'playpause' | 'merge' | 'setStart'
 type Binding = { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }
@@ -37,6 +37,10 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
   const [activeId, setActiveId] = useState<number | null>(null)
   const lastStartSetRef = useRef<number | null>(null)
   const scrollTimerRef = useRef<number | null>(null)
+  const srtInputRef = useRef<HTMLInputElement>(null)
+  const txtInputRef = useRef<HTMLInputElement>(null)
+  const [srtName, setSrtName] = useState('')
+  const [txtName, setTxtName] = useState('')
 
   useEffect(() => setItems(subtitles || []), [subtitles])
   // Update activeId only when it actually changes to avoid flicker and
@@ -125,10 +129,25 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
+    setSrtName(f.name)
     const reader = new FileReader()
     reader.onload = () => {
       const txt = String(reader.result || '')
       const parsed = parseSrt(txt)
+      setItems(parsed)
+      onChange(parsed)
+    }
+    reader.readAsText(f)
+  }
+
+  const onTxtFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setTxtName(f.name)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const txt = String(reader.result || '')
+      const parsed = parsePlainTextSubtitles(txt, 5)
       setItems(parsed)
       onChange(parsed)
     }
@@ -245,12 +264,38 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
   return (
     <aside className="subtitles-list">
       <h2>Subtitles</h2>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
-        <label>
-          SRT 読み込み
-          <input type="file" accept=".srt,text/plain" onChange={onFile} />
-        </label>
-        <button onClick={exportSrt} disabled={items.length === 0}>
+      <div className="file-controls">
+        <div className="file-picker">
+          <span className="file-picker__label">SRT 読み込み</span>
+          <button type="button" className="time-btn" onClick={() => srtInputRef.current?.click()}>
+            ファイルを選択
+          </button>
+          <span className="file-picker__name">{srtName || '未選択'}</span>
+          <input
+            ref={srtInputRef}
+            type="file"
+            accept=".srt"
+            onChange={onFile}
+            style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: 0, opacity: 0, pointerEvents: 'none' }}
+          />
+        </div>
+
+        <div className="file-picker">
+          <span className="file-picker__label">TXT 読み込み</span>
+          <button type="button" className="time-btn" onClick={() => txtInputRef.current?.click()}>
+            ファイルを選択
+          </button>
+          <span className="file-picker__name">{txtName || '未選択'}</span>
+          <input
+            ref={txtInputRef}
+            type="file"
+            accept=".txt,text/plain"
+            onChange={onTxtFile}
+            style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: 0, opacity: 0, pointerEvents: 'none' }}
+          />
+        </div>
+
+        <button className="time-btn" onClick={exportSrt} disabled={items.length === 0} style={{ marginLeft: 'auto' }}>
           SRT をエクスポート
         </button>
       </div>
@@ -268,10 +313,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
           </button>
         </div>
 
-        {items.length === 0 ? (
-          <p>読み込まれていません。SRT ファイルを選択するか、＋で新規追加してください。</p>
-        ) : (
-          items.map((s, i) => (
+        {items.map((s, i) => (
             <React.Fragment key={s.id}>
               <div
                 id={`sub-${s.id}`}
@@ -510,8 +552,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
                 </button>
               </div>
             </React.Fragment>
-          ))
-        )}
+          ))}
       </div>
     </aside>
   )
