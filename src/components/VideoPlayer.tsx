@@ -108,7 +108,7 @@ export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) 
       </div>
 
       <div className="video-area__player">
-        <video ref={videoRef} className="video-area__video" />
+        <video ref={videoRef} className="video-area__video" onClick={togglePlay} />
         {currentSubtitle ? (
           <div className="video-area__overlay" aria-live="polite">
             <span className="video-area__subtitle">{currentSubtitle.text}</span>

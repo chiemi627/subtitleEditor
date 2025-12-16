@@ -10,7 +10,7 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(true)
   const [playerCtrl, setPlayerCtrl] = useState<{ playFrom: (t: number) => void; pause?: () => void; toggle?: () => void } | null>(null)
   const [tabCreatesNewAtEnd, setTabCreatesNewAtEnd] = useState<boolean>(false)
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true)
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(false)
   const [keybindings, setKeybindings] = useState<Record<'split' | 'next' | 'prev' | 'playpause' | 'merge' | 'setStart', { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean }>>({
     split: { key: 'Enter', ctrl: true },
     next: { key: 'Tab' },

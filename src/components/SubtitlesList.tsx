@@ -380,27 +380,29 @@ export default function SubtitlesList({
                     >
                       ⏸
                     </button>
-                    <button
-                      className="time-btn"
-                      onClick={() => shiftStartEarlier(s.id)}
-                      title="開始時刻を0.5秒前にする"
-                      aria-label={`開始を0.5秒前に-${s.id}`}
-                    >
-                      ←0.5s
-                    </button>
-                    <input
-                      value={secToHHMMSS(s.start)}
-                      onChange={(e) => updateItem(s.id, { start: hhmmssToSec(e.target.value) })}
-                      style={{ width: 130 }}
-                    />
-                    <button
-                      className="time-btn"
-                      onClick={() => setStartToCurrent(s.id)}
-                      title="動画の現在時刻を開始に設定"
-                      aria-label={`開始を現在に設定-${s.id}`}
-                    >
-                      <span aria-hidden>⏱</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button
+                        className="time-btn"
+                        onClick={() => shiftStartEarlier(s.id)}
+                        title="開始時刻を0.5秒前にする"
+                        aria-label={`開始を0.5秒前に-${s.id}`}
+                      >
+                        ←0.5s
+                      </button>
+                      <input
+                        value={secToHHMMSS(s.start)}
+                        onChange={(e) => updateItem(s.id, { start: hhmmssToSec(e.target.value) })}
+                        style={{ width: 130 }}
+                      />
+                      <button
+                        className="time-btn"
+                        onClick={() => setStartToCurrent(s.id)}
+                        title="動画の現在時刻を開始に設定"
+                        aria-label={`開始を現在に設定-${s.id}`}
+                      >
+                        <span aria-hidden>⏱</span>
+                      </button>
+                    </div>
                     <span>→</span>
                     <input
                       value={secToHHMMSS(s.end)}
