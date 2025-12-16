@@ -93,16 +93,18 @@ export default function VideoPlayer({ onReady, onTimeUpdate, ...props }: Props) 
 
   return (
     <section className="video-area">
-      <div>
+      <div className="video-area__input">
         <label>
           動画読み込み
           <input type="file" accept="video/mp4,video/*" onChange={onFile} />
         </label>
       </div>
 
-      <video ref={videoRef} style={{ width: '640px', maxWidth: '100%' }} />
+      <div className="video-area__player">
+        <video ref={videoRef} className="video-area__video" />
+      </div>
 
-      <div className="controls">
+      <div className="controls video-area__controls">
         <button onClick={togglePlay}>{paused ? '再生' : '一時停止'}</button>
         <button onClick={() => seekTo((videoRef.current?.currentTime || 0) - 5)}>-5s</button>
         <button onClick={() => seekTo((videoRef.current?.currentTime || 0) + 5)}>+5s</button>

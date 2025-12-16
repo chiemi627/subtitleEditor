@@ -2,7 +2,16 @@
 body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; padding: 16px; }
 header { margin-bottom: 12px }
 .layout { display: flex; gap: 12px; height: calc(100vh - 80px); /* leave room for header */ }
-.video-area { width: 680px; max-width: 45%; flex: 0 0 auto }
+.video-area {
+  width: 680px;
+  max-width: 45%;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
 /* 区切り線を不要にしたので border-left を削除 */
 .subtitles-list { flex: 1 1 auto; padding-left: 12px; overflow: auto }
 .controls { margin-top: 8px; display: flex; gap: 8px }
@@ -56,6 +65,22 @@ header { margin-bottom: 12px }
 	font-size: 13px;
 }
 .time-btn:hover { background: #f3f3f3 }
+
+.video-area__player {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.video-area__video {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  object-fit: contain;
+  background: #000;
+  display: block;
+}
+
+.video-area__controls { flex-wrap: wrap }
 
 .insert-btn {
 	border: 1px solid #cfe8d8;

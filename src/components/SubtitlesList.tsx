@@ -13,6 +13,8 @@ type Props = {
   keybindings?: Record<Action, Binding>
   isPaused?: boolean
   tabCreatesNewAtEnd?: boolean
+  autoScrollEnabled?: boolean
+  onToggleAutoScroll?: () => void
 }
 
 function secToHHMMSS(sec: number) {
@@ -32,7 +34,19 @@ function hhmmssToSec(s: string) {
   return Number(hh) * 3600 + Number(mm) * 60 + Number(ss) + milli / 1000
 }
 
-export default function SubtitlesList({ subtitles, onChange, currentTime = 0, playFrom, pause, togglePlay, keybindings, isPaused = true, tabCreatesNewAtEnd = false }: Props) {
+export default function SubtitlesList({
+  subtitles,
+  onChange,
+  currentTime = 0,
+  playFrom,
+  pause,
+  togglePlay,
+  keybindings,
+  isPaused = true,
+  tabCreatesNewAtEnd = false,
+  autoScrollEnabled = true,
+  onToggleAutoScroll,
+}: Props) {
   const [items, setItems] = useState<Subtitle[]>(subtitles || [])
   const [activeId, setActiveId] = useState<number | null>(null)
   const lastStartSetRef = useRef<number | null>(null)
@@ -57,7 +71,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
   }, [currentTime, items])
 
   useEffect(() => {
-    if (activeId == null) return
+    if (!autoScrollEnabled || activeId == null) return
     const doScroll = () => {
       const el = document.getElementById(`sub-${activeId}`)
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -81,7 +95,7 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
         scrollTimerRef.current = null
       }
     }
-  }, [activeId])
+  }, [activeId, autoScrollEnabled])
 
   // グローバル Tab ハンドラ:
   // - テキストエリアにフォーカスがない時に Tab が押されたら、
@@ -295,9 +309,21 @@ export default function SubtitlesList({ subtitles, onChange, currentTime = 0, pl
           />
         </div>
 
-        <button className="time-btn" onClick={exportSrt} disabled={items.length === 0} style={{ marginLeft: 'auto' }}>
-          SRT をエクスポート
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="time-btn"
+            aria-pressed={autoScrollEnabled}
+            onClick={() => {
+              if (typeof onToggleAutoScroll === 'function') onToggleAutoScroll()
+            }}
+          >
+            自動スクロール {autoScrollEnabled ? 'ON' : 'OFF'}
+          </button>
+          <button className="time-btn" onClick={exportSrt} disabled={items.length === 0}>
+            SRT をエクスポート
+          </button>
+        </div>
       </div>
 
       <div style={{ maxHeight: '70vh', overflow: 'auto' }}>
